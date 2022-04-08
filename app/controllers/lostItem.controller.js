@@ -6,15 +6,19 @@ let bcrypt = require("bcryptjs");
 
 exports.getLostItemList = (req, res) => {
 
-    LostItem.find((err, lostItem) => {
+    LostItem.find((err, lostItems) => {
         if (err) {
             res.status(500).send({message: err});
             return;
         }
+        lostItems.forEach(item => {
+            if (item.userId !== req.userId) {
+                item.claims = item.claims.filter(i => i.senderId === req.userId)
+            }
+        })
         res.send({
-            data: lostItem.reverse(), message: "LostItem list successfully!"
+            data: lostItems.reverse(), message: "LostItem list successfully!"
         });
-
     });
 };
 
@@ -32,15 +36,40 @@ exports.getCurrentUserLostItemList = (req, res) => {
 };
 
 exports.getLostItemClaimList = (req, res) => {
-    LostItem.find({"claims.senderId": req.userId}, (err, lostItem) => {
+    LostItem.find({"claims.senderId": req.userId}, (err, lostItems) => {
         if (err) {
             res.status(500).send({message: err});
             return;
         }
+        lostItems.forEach(item => {
+            if (item.userId !== req.userId) {
+                item.claims = item.claims.filter(i => i.senderId === req.userId)
+            }
+        })
         res.send({
-            data: lostItem, message: "LostItem list successfully!"
+            data: lostItems.reverse(), message: "LostItem list successfully!    "
         });
     });
+};
+
+exports.getLostItemClaimById = (req, res) => {
+    if (req.params.id)
+        LostItem.findById(req.params.id, (err, lostItem) => {
+            if (err) {
+                res.status(500).send({message: err});
+                return;
+            }
+            if (lostItem.userId !== req.userId) {
+                lostItem.claims = lostItem.claims.filter(i => i.senderId === req.userId)
+            }
+            res.send({
+                data: lostItem, message: "LostItem not found!"
+            });
+        });
+    else {
+        res.status(500).send({message: "Item Id is missing!!!"});
+
+    }
 };
 
 exports.lostItemClaim = (req, res) => {
@@ -55,6 +84,58 @@ exports.lostItemClaim = (req, res) => {
         lostItem.save();
         res.send({
             message: "LostItem list successfully!"
+        });
+    }); else res.status(500).send({message: "Please enter Item Id"});
+};
+
+
+exports.lostItemClaimResponse = (req, res) => {
+    if (req?.body?.itemId && req.body?.messageId && req.body?.reply) LostItem.findById(req?.body?.itemId, (err, lostItem) => {
+        if (err) {
+            res.status(500).send({message: err});
+            return;
+        }
+        if (lostItem.userId !== req.userId) {
+            res.status(401).send({message: "You are not authorised!"});
+            return;
+        }
+        const messageIndex = lostItem.claims.findIndex(i => req.body.messageId === String(i._id))
+        console.log(messageIndex)
+        if (messageIndex >= 0) {
+            lostItem.claims[messageIndex].reply = req.body?.reply;
+            lostItem.save();
+        } else {
+            res.status(404).send({message: "Message not found!"});
+            return;
+        }
+        res.send({
+            message: "message replied successfully!"
+        });
+    }); else res.status(500).send({message: "Please enter Item Id"});
+};
+
+exports.lostItemMarkAsFound = (req, res) => {
+    if (req?.body?.itemId && req.body?.messageId) LostItem.findById(req?.body?.itemId, (err, lostItem) => {
+        if (err) {
+            res.status(500).send({message: err});
+            return;
+        }
+        if (lostItem.userId !== req.userId) {
+            res.status(401).send({message: "You are not authorised!"});
+            return;
+        }
+        lostItem.itemFound = true;
+        const messageIndex = lostItem.claims.findIndex(i => req.body.messageId === String(i._id))
+        console.log(messageIndex)
+        if (messageIndex >= 0) {
+            lostItem.claims[messageIndex].found = true;
+            lostItem.save();
+        } else {
+            res.status(404).send({message: "Message not found!"});
+            return;
+        }
+        res.send({
+            message: "Congratulation!!!"
         });
     }); else res.status(500).send({message: "Please enter Item Id"});
 };
@@ -81,6 +162,30 @@ exports.creatLostItem = (req, res) => {
     });
 };
 
+
+exports.searchLostItem = (req, res) => {
+    console.log(req.body)
+    if (req.body?.searchKey) {
+        LostItem.find((err, lostItems) => {
+            if (err) {
+                res.status(500).send({message: err});
+                return;
+            }
+            const searchObj = (obj) => {
+                return !!req.body?.searchKey.split(" ").find(i => obj.includes(i))
+            }
+            lostItems = lostItems.filter(item => searchObj(JSON.stringify(Object.values(item))))
+            lostItems.forEach(item => {
+                if (item.userId !== req.userId) {
+                    item.claims = item.claims.filter(i => i.senderId === req.userId)
+                }
+            })
+            res.send({
+                data: lostItems.reverse(), message: "LostItem list successfully!"
+            });
+        });
+    } else res.status(500).send({message: "Please provide search key"});
+};
 exports.updateLostItem = (req, res) => {
     const lostItem = new LostItem({
         title: req.body.title.toLowerCase(),
@@ -100,41 +205,4 @@ exports.updateLostItem = (req, res) => {
         res.send({message: "LostItem registered successfully!"});
 
     });
-};
-
-exports.signin = (req, res) => {
-    LostItem.findOne({
-        username: req.body.username
-    })
-        .populate("roles", "-__v")
-        .exec((err, user) => {
-            if (err) {
-                res.status(500).send({message: err});
-                return;
-            }
-            if (!user) {
-                return res.status(404).send({message: "LostItem Not found."});
-            }
-
-            let passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
-
-            if (!passwordIsValid) {
-                return res.status(401).send({
-                    accessToken: null, message: "Invalid Password!"
-                });
-            }
-
-            let token = jwt.sign({id: user.id}, config.secret, {
-                expiresIn: 86400 // 24 hours
-            });
-
-            let authorities = [];
-
-            for (let i = 0; i < user.roles.length; i++) {
-                authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
-            }
-            res.status(200).send({
-                id: user._id, username: user.username, email: user.email, roles: authorities, accessToken: token
-            });
-        });
 };

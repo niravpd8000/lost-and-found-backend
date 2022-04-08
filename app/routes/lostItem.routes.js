@@ -14,13 +14,21 @@ module.exports = function (app) {
 
     app.post("/api/lostItem/create", [authJwt.verifyToken], controller.creatLostItem);
 
+    app.post("/api/lostItem/search", [authJwt.verifyToken], controller.searchLostItem);
+
     app.get("/api/lostItem/list", [authJwt.verifyToken], controller.getLostItemList);
 
     app.get("/api/lostItem/list/currentUser", [authJwt.verifyToken], controller.getCurrentUserLostItemList);
 
     app.post("/api/lostItem/claim", [authJwt.verifyToken], controller.lostItemClaim);
 
+    app.post("/api/lostItem/claim/response", [authJwt.verifyToken], controller.lostItemClaimResponse);
+
+    app.post("/api/lostItem/claimed/success", [authJwt.verifyToken], controller.lostItemMarkAsFound);
+
     app.get("/api/lostItem/claimed", [authJwt.verifyToken], controller.getLostItemClaimList);
+
+    app.get("/api/lostItem/claimed/getById/:id", [authJwt.verifyToken], controller.getLostItemClaimById);
 
     app.get(
         "/api/test/mod",
