@@ -148,7 +148,7 @@ exports.creatLostItem = (req, res) => {
         subCategory: req.body.subCategory,
         place: req.body.place,
         description: req.body.description.toLowerCase(),
-        userId: req.body.userId,
+        userId: req.userId,
         shareContact: req.body.shareContact,
     });
 

@@ -1,5 +1,6 @@
 const {authJwt} = require("../middlewares");
 const controller = require("../controllers/lostItem.controller");
+const awsUpload = require("../middlewares/awsUpload");
 
 module.exports = function (app) {
     app.use(function (req, res, next) {
