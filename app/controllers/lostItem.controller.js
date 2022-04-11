@@ -150,6 +150,8 @@ exports.creatLostItem = (req, res) => {
         description: req.body.description.toLowerCase(),
         userId: req.userId,
         shareContact: req.body.shareContact,
+        color:req.body.color,
+        brand:req.body.brand,
     });
 
     lostItem.save((err, lostItem) => {
@@ -164,7 +166,6 @@ exports.creatLostItem = (req, res) => {
 
 
 exports.searchLostItem = (req, res) => {
-    console.log(req.body)
     if (req.body?.searchKey) {
         LostItem.find((err, lostItems) => {
             if (err) {
@@ -172,9 +173,9 @@ exports.searchLostItem = (req, res) => {
                 return;
             }
             const searchObj = (obj) => {
-                return !!req.body?.searchKey.split(" ").find(i => obj.includes(i))
+                return !!req.body?.searchKey.split(" ").find(i => obj.includes(i.toLowerCase()))
             }
-            lostItems = lostItems.filter(item => searchObj(JSON.stringify(Object.values(item))))
+            lostItems = lostItems.filter(item => searchObj(JSON.stringify(Object.values(item)).toLowerCase()))
             lostItems.forEach(item => {
                 if (item.userId !== req.userId) {
                     item.claims = item.claims.filter(i => i.senderId === req.userId)
