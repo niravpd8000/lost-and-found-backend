@@ -141,17 +141,21 @@ exports.lostItemMarkAsFound = (req, res) => {
 };
 
 exports.creatLostItem = (req, res) => {
+
+    console.log(req.body)
+    const data = req.body.get("data")
     const lostItem = new LostItem({
-        title: req.body.title.toLowerCase(),
-        images: req.body.images,
-        category: req.body.category,
-        subCategory: req.body.subCategory,
-        place: req.body.place,
-        description: req.body.description.toLowerCase(),
+        title: data.title.toLowerCase(),
+        images: data.images,
+        itemTypeFound: data.itemTypeFound || false,
+        category: data.category,
+        subCategory: data.subCategory,
+        place: data.place,
+        description: data.description.toLowerCase(),
         userId: req.userId,
-        shareContact: req.body.shareContact,
-        color:req.body.color,
-        brand:req.body.brand,
+        shareContact: data.shareContact,
+        color: data.color,
+        brand: data.brand,
     });
 
     lostItem.save((err, lostItem) => {
