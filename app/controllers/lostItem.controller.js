@@ -147,7 +147,7 @@ exports.creatLostItem = (req, res) => {
     const lostItem = new LostItem({
         title: data.title.toLowerCase(),
         images: data.images,
-        itemTypeFound: data.itemTypeFound || false,
+        itemTypeFound: data?.itemTypeFound || false,
         category: data.category,
         subCategory: data.subCategory,
         place: data.place,
