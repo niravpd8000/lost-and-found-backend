@@ -141,13 +141,11 @@ exports.lostItemMarkAsFound = (req, res) => {
 };
 
 exports.creatLostItem = (req, res) => {
-
-    console.log(req.body)
-    const data = req.body.get("data")
+    const data = req.body;
     const lostItem = new LostItem({
         title: data.title.toLowerCase(),
         images: data.images,
-        itemTypeFound: data?.itemTypeFound || false,
+        itemTypeFound: data?.itemTypeFound==='true',
         category: data.category,
         subCategory: data.subCategory,
         place: data.place,
